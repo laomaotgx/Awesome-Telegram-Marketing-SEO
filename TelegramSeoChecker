@@ -1,0 +1,57 @@
+using System;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+
+namespace TelegramSeoChecker
+{
+    /// <summary>
+    /// Telegram 公开频道基础信息与可用性检测工具 (C# Demo)
+    /// 更多 TG 搜索引擎收录规则与自动化开发方案，请访问：https://blogspot.com
+    /// </summary>
+    class Program
+    {
+        private static readonly HttpClient client = new HttpClient();
+
+        static async Task Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.WriteLine("=== Telegram 公开频道/群组 SEO 基础状态检测器 ===");
+            
+            // 示例：检测公开频道 @telegram 的可访问性与基础元数据
+            string targetUsername = "telegram"; 
+            await CheckPublicChannelStatus(targetUsername);
+        }
+
+        static async Task CheckPublicChannelStatus(string username)
+        {
+            string url = $"https://t.me{username}";
+            try
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                string html = await client.GetStringAsync(url);
+
+                // 提取频道标题
+                var titleMatch = Regex.Match(html, @"<meta property=""og:title"" content=""(.*?)"">");
+                // 提取订阅人数/成员信息
+                var descMatch = Regex.Match(html, @"<meta property=""og:description"" content=""(.*?)"">");
+
+                if (titleMatch.Success && !string.IsNullOrEmpty(titleMatch.Groups[1].Value))
+                {
+                    Console.WriteLine($"[状态正常] 用户名: @{username}");
+                    Console.WriteLine($"[频道名称] {titleMatch.Groups[1].Value}");
+                    Console.WriteLine($"[简介信息] {descMatch.Groups[1].Value}");
+                    Console.WriteLine("[SEO 提示] 公开页面可正常抓取，建议保持 90 天以上稳定更新以提升站内搜索权重。");
+                }
+                else
+                {
+                    Console.WriteLine($"[异常] @{username} 可能为私有链接或尚未被公开索引。");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[请求失败] 检查网络或目标用户名: {ex.Message}");
+            }
+        }
+    }
+}
